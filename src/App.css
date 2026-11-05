@@ -4058,3 +4058,284 @@ td {
     font-size: 18px;
   }
 }
+
+.approval-count {
+  color: #64728a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.approval-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.approval-queue,
+.approval-detail {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e8ebf1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(27 43 75 / 4%);
+}
+
+.approval-queue > h3,
+.approval-detail-heading h3,
+.issued-heading h3 {
+  margin: 0;
+  color: #202d45;
+  font-size: 18px;
+}
+
+.approval-queue > h3 {
+  margin-bottom: 14px;
+}
+
+.approval-queue-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 14px;
+  border: 1px solid #e8ebf1;
+  border-radius: 10px;
+  background: #fff;
+  color: #26344d;
+  cursor: pointer;
+  text-align: left;
+}
+
+.approval-queue-item.selected {
+  border-color: #31549a;
+  background: #f7f9fd;
+}
+
+.approval-queue-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.approval-queue-top > strong,
+.approval-amount {
+  color: #24499a;
+  font-size: 13px;
+}
+
+.approval-queue-item > span:not(.approval-queue-top) {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.approval-queue-item small,
+.approval-detail-heading p,
+.issued-heading p {
+  color: #7d8798;
+  font-size: 12px;
+}
+
+.approval-empty {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8893a4;
+  text-align: center;
+}
+
+.approval-empty strong {
+  color: #34425a;
+  font-size: 14px;
+}
+
+.approval-empty span {
+  font-size: 12px;
+}
+
+.approval-detail-empty {
+  min-height: 320px;
+}
+
+.approval-detail-heading {
+  margin-bottom: 20px;
+}
+
+.approval-detail-heading h3 {
+  margin-top: 8px;
+}
+
+.approval-detail-heading p {
+  margin: 5px 0 0;
+}
+
+.approval-key-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  padding: 4px 16px;
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.approval-key-details > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.approval-key-details > div > span,
+.print-document-grid > div > span {
+  color: #7d8798;
+  font-size: 11px;
+}
+
+.approval-key-details > div > strong,
+.print-document-grid > div > strong {
+  overflow-wrap: anywhere;
+  color: #29364e;
+  font-size: 13px;
+}
+
+.approval-action {
+  margin-top: 18px;
+}
+
+.issued-documents {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.issued-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.issued-heading p {
+  margin: 5px 0 0;
+}
+
+.print-document {
+  padding: 22px;
+  border: 1px solid #e1e6ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.print-document-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #24499a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.print-document-brand .brand-image {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+.print-document > h2 {
+  margin: 18px 0 6px;
+  color: #202d45;
+  font-size: 21px;
+}
+
+.print-document > p:not(.print-signature) {
+  margin: 0 0 14px;
+  color: #68758a;
+  font-size: 12px;
+}
+
+.print-document-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+.print-document-grid > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.print-signature {
+  margin: 24px 0 0;
+  color: #59667b;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .approval-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .approval-key-details,
+  .print-document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .issued-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .issued-documents,
+  .issued-documents * {
+    visibility: visible !important;
+  }
+
+  .issued-documents {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    margin: 0;
+  }
+
+  .issued-documents .no-print {
+    display: none !important;
+  }
+
+  .print-document {
+    break-after: page;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .print-document:last-child {
+    break-after: auto;
+  }
+}

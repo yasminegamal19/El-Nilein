@@ -6,6 +6,7 @@ const demoPassword = 'Nilein@2026'
 
 const accounts = [
   { id: 'admin', email: 'admin@nilein.demo', password: demoPassword, name: 'Mohamed Abdullah', role: 'System Administrator', department: 'Administration', line: null },
+  { id: 'manager', email: 'manager@nilein.demo', password: demoPassword, name: 'Nadia Osman', role: 'Production Manager', department: 'Production', line: null },
   { id: 'cars', email: 'cars@nilein.demo', password: demoPassword, name: 'Ahmed Hassan', role: 'Motor Insurance Officer', department: 'Motor Insurance', line: 'Motor Insurance' },
   { id: 'agriculture', email: 'farm@nilein.demo', password: demoPassword, name: 'Sara Ibrahim', role: 'Agricultural Insurance Officer', department: 'Agricultural Insurance', line: 'Agricultural Insurance' },
   { id: 'livestock', email: 'animals@nilein.demo', password: demoPassword, name: 'Omar Khaled', role: 'Livestock Insurance Officer', department: 'Livestock Insurance', line: 'Livestock Insurance' },
@@ -21,6 +22,16 @@ const dashboardData = {
     heroTitle: 'Your insurance operations,',
     heroSubtitle: 'all in one clear view.',
     heroDescription: 'A unified view of Nilein branches and insurance services.',
+  },
+  manager: {
+    policies: '2,486',
+    premium: '1,284,500',
+    claims: '38',
+    clients: '1,892',
+    clientLabel: 'Registered Clients',
+    heroTitle: 'Production at',
+    heroSubtitle: 'the center of every policy.',
+    heroDescription: 'Review approved insurance entries and issue policy documents.',
   },
   cars: {
     policies: '1,042',
@@ -62,6 +73,8 @@ const navigation = [
   { label: 'Collections', icon: 'wallet', audience: 'all' },
   { label: 'Reports', icon: 'chart', audience: 'admin' },
   { label: 'Employees & Access', icon: 'settings', audience: 'admin' },
+  { label: 'Entry Approval', icon: 'file', audience: 'admin' },
+  { label: 'Production Entry Approval', icon: 'shield', audience: 'manager' },
 ]
 
 const initialPolicies = [
@@ -330,7 +343,7 @@ function ClientRegistry({ clients, onCreate, onUpdate, onStartPolicy }) {
   )
 }
 
-function MakeNewPolicy({ clients, onOpenRegistry, initialClientId }) {
+function MakeNewPolicy({ clients, onOpenRegistry, initialClientId, onSubmit }) {
   const [clientId, setClientId] = useState(initialClientId || '')
   const [lookupError, setLookupError] = useState('')
   const [selectedClient, setSelectedClient] = useState(null)
@@ -510,10 +523,164 @@ function MakeNewPolicy({ clients, onOpenRegistry, initialClientId }) {
           </div>
           {policy.notes && <div className="invoice-notes"><strong>Policy Notes</strong><p>{policy.notes}</p></div>}
         </section>}
-        <div className="policy-form-actions"><div role="status" className="draft-message">{draftMessage || 'Demo mode: drafts are saved only in this browser.'}</div><div>{activeTab !== 'policy' && <button className="button-secondary" type="button" onClick={() => setActiveTab(activeTab === 'invoice' ? 'technical' : 'policy')}>Previous</button>}{activeTab !== 'invoice' ? <button className="button-primary" type="button" onClick={() => setActiveTab(activeTab === 'policy' ? 'technical' : 'invoice')}>Continue</button> : <button className="button-primary" type="button" onClick={saveDraft}>Save Policy Draft</button>}</div></div>
+        <div className="policy-form-actions"><div role="status" className="draft-message">{draftMessage || 'Demo mode: drafts are saved only in this browser.'}</div><div>{activeTab !== 'policy' && <button className="button-secondary" type="button" onClick={() => setActiveTab(activeTab === 'invoice' ? 'technical' : 'policy')}>Previous</button>}{activeTab !== 'invoice' ? <button className="button-primary" type="button" onClick={() => setActiveTab(activeTab === 'policy' ? 'technical' : 'invoice')}>Continue</button> : <><button className="button-secondary" type="button" onClick={saveDraft}>Save Draft</button><button className="button-primary" type="button" onClick={() => onSubmit({ ...policy, clientId: selectedClient.id, clientName: selectedClient.nameEnglish || selectedClient.nameArabic, selectedCovers, selectedTerms, basicPremium, netPremium, taxAmount, totalPayable, downPayment, commissionAmount: netPremium * number('commissionRate') / 100 })}>Save &amp; Submit for Approval</button></>}</div></div>
       </>}
     </section>
   )
+}
+
+function ApprovalPage({ role, entries, onApprove }) {
+  const [selectedId, setSelectedId] = useState('')
+  const isManager = role === 'manager'
+  const visibleEntries = entries.filter((entry) => isManager
+    ? ['pending_manager', 'issued'].includes(entry.status)
+    : entry.status === 'pending_admin')
+  const selectedEntry = visibleEntries.find((entry) => entry.id === selectedId) || visibleEntries[0]
+  const amount = (value) => (Number(value) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const detailFields = selectedEntry ? [
+    ['Client name', selectedEntry.clientName],
+    ['Client ID', selectedEntry.clientId],
+    ['Branch', selectedEntry.branch],
+    ['Policy no.', selectedEntry.policyNo],
+    ['Class of insurance', selectedEntry.classOfInsurance],
+    ['Line of business', selectedEntry.lineOfBusiness],
+    ['Issue date', selectedEntry.issueDate],
+    ['Inception date', selectedEntry.inceptionDate],
+    ['Expiry date', selectedEntry.expiryDate],
+    ['Chassis no.', selectedEntry.chassisNo],
+    ['Engine no.', selectedEntry.engineNo],
+    ['Plate no.', selectedEntry.plateNo],
+    ['Vehicle', `${selectedEntry.year || ''} ${selectedEntry.make || ''} ${selectedEntry.model || ''}`.trim()],
+    ['Vehicle value', `${amount(selectedEntry.vehicleValue)} SDG`],
+    ['Covers', (selectedEntry.selectedCovers || []).join(', ')],
+    ['Terms', (selectedEntry.selectedTerms || []).join(', ')],
+    ['Notes', selectedEntry.notes],
+  ] : []
+
+  return (
+    <section className="approval-page">
+      <div className="registry-heading">
+        <div>
+          <span className="eyebrow"><span className="eyebrow-line" /> PRODUCTION (INSURANCE)</span>
+          <h2>{isManager ? 'Production Entry Approval' : 'Entry Approval'}</h2>
+          <p>{isManager ? 'Review key production details, approve entries, and print issued documents.' : 'Review complete policy submissions and forward them to the production manager.'}</p>
+        </div>
+        <span className="approval-count">{visibleEntries.filter((entry) => entry.status !== 'issued').length} awaiting your approval</span>
+      </div>
+      <div className="approval-layout">
+        <div className="approval-queue">
+          <h3>Approval Queue</h3>
+          {visibleEntries.length ? visibleEntries.map((entry) => (
+            <button key={entry.id} type="button" className={`approval-queue-item ${selectedEntry?.id === entry.id ? 'selected' : ''}`} onClick={() => setSelectedId(entry.id)}>
+              <span className="approval-queue-top">
+                <strong>{entry.policyNo}</strong>
+                <span className={`status-badge ${entry.status === 'issued' ? 'green' : 'amber'}`}><i />{entry.status === 'issued' ? 'Issued' : entry.status === 'pending_manager' ? 'Manager review' : 'Admin review'}</span>
+              </span>
+              <span>{entry.clientName}</span>
+              <small>{entry.classOfInsurance} · {entry.branch} · {entry.issueDate}</small>
+              <strong className="approval-amount">{amount(entry.totalPayable)} SDG</strong>
+            </button>
+          )) : (
+            <div className="approval-empty"><Icon name="file" size={24} /><strong>Nothing to review yet</strong><span>Submitted policies will appear here.</span></div>
+          )}
+        </div>
+        <div className="approval-detail">
+          {selectedEntry ? (
+            <>
+              <div className="approval-detail-heading">
+                <span className="eyebrow"><span className="eyebrow-line" /> {isManager ? 'PRODUCTION REVIEW' : 'ADMIN REVIEW'}</span>
+                <h3>{selectedEntry.policyNo}</h3>
+                <p>Submitted by {selectedEntry.submittedBy || 'Production Officer'}</p>
+              </div>
+              <div className="approval-key-details">
+                {detailFields.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || '—'}</strong></div>)}
+              </div>
+              {selectedEntry.status === 'pending_admin' && !isManager && (
+                <button className="button-primary approval-action" type="button" onClick={() => onApprove(selectedEntry.id, 'pending_manager')}>Approve &amp; Send to Production</button>
+              )}
+              {selectedEntry.status === 'pending_manager' && isManager && (
+                <button className="button-primary approval-action" type="button" onClick={() => onApprove(selectedEntry.id, 'issued')}>Approve &amp; Issue Policy</button>
+              )}
+              {selectedEntry.status === 'issued' && isManager && (
+                <div className="issued-documents">
+                  <div className="issued-heading">
+                    <div><h3>Issued Documents</h3><p>Print the policy, customer debit note, and broker credit note.</p></div>
+                    <button className="button-primary no-print" type="button" onClick={() => window.print()}>Print All Documents</button>
+                  </div>
+                  <article className="print-document">
+                    <div className="print-document-brand"><BrandMark /><span>EL NILEIN INSURANCE</span></div>
+                    <h2>Motor Insurance Policy</h2>
+                    <div className="print-document-grid">
+                      {[
+                        ['Policy No.', selectedEntry.policyNo], ['Client', selectedEntry.clientName],
+                        ['Client ID', selectedEntry.clientId], ['Branch', selectedEntry.branch],
+                        ['Class of Insurance', selectedEntry.classOfInsurance], ['Line of Business', selectedEntry.lineOfBusiness],
+                        ['Issue Date', selectedEntry.issueDate], ['Inception Date', selectedEntry.inceptionDate],
+                        ['Expiry Date', selectedEntry.expiryDate], ['Vehicle', `${selectedEntry.year || ''} ${selectedEntry.make || ''} ${selectedEntry.model || ''}`.trim()],
+                        ['Chassis No.', selectedEntry.chassisNo], ['Engine No.', selectedEntry.engineNo],
+                        ['Plate No.', selectedEntry.plateNo], ['Sum Insured', `${amount(selectedEntry.vehicleValue)} SDG`],
+                        ['Covers', (selectedEntry.selectedCovers || []).join(', ')], ['Terms', (selectedEntry.selectedTerms || []).join(', ')],
+                        ['Notes', selectedEntry.notes],
+                      ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || '—'}</strong></div>)}
+                    </div>
+                    <p className="print-signature">Authorized signature: ____________________</p>
+                  </article>
+                  <article className="print-document financial-document">
+                    <div className="print-document-brand"><BrandMark /><span>EL NILEIN INSURANCE</span></div>
+                    <h2>Debit Note</h2>
+                    <p>Premium and payment details for the policy listed below</p>
+                    <div className="print-document-grid">
+                      {[
+                        ['Debit Note No.', `DN-${selectedEntry.policyNo}`], ['Policy No.', selectedEntry.policyNo],
+                        ['Client', selectedEntry.clientName], ['Date', selectedEntry.issueDate],
+                        ['Net Premium', `${amount(selectedEntry.netPremium)} SDG`], ['Tax', `${amount(selectedEntry.taxAmount)} SDG`],
+                        ['Total Payable', `${amount(selectedEntry.totalPayable)} SDG`], ['Down Payment', `${amount(selectedEntry.downPayment)} SDG`],
+                        ['Payment Method', selectedEntry.paymentMethod], ['Payment Status', selectedEntry.paymentStatus],
+                      ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || '—'}</strong></div>)}
+                    </div>
+                    <p className="print-signature">Cashier: ____________________</p>
+                  </article>
+                  <article className="print-document financial-document">
+                    <div className="print-document-brand"><BrandMark /><span>EL NILEIN INSURANCE</span></div>
+                    <h2>Broker Credit Note</h2>
+                    <p>Broker commission for the policy listed below</p>
+                    <div className="print-document-grid">
+                      {[
+                        ['Credit Note No.', `CN-${selectedEntry.policyNo}`], ['Policy No.', selectedEntry.policyNo],
+                        ['Client', selectedEntry.clientName], ['Broker', 'Broker'],
+                        ['Date', selectedEntry.issueDate], ['Net Premium', `${amount(selectedEntry.netPremium)} SDG`],
+                        ['Commission Rate', `${selectedEntry.commissionRate}%`], ['Commission Amount', `${amount(selectedEntry.commissionAmount)} SDG`],
+                      ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || '—'}</strong></div>)}
+                    </div>
+                    <p className="print-signature">Authorized signature: ____________________</p>
+                  </article>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="approval-empty approval-detail-empty"><strong>Select a policy to review</strong><span>Policy details will appear here.</span></div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function loadDemoApprovals() {
+  try {
+    const storedEntries = localStorage.getItem('nilein-demo-approvals')
+    if (!storedEntries) return []
+    const entries = JSON.parse(storedEntries)
+    if (Array.isArray(entries) && entries.every((entry) => (
+      typeof entry.id === 'string'
+      && typeof entry.policyNo === 'string'
+      && ['pending_admin', 'pending_manager', 'issued'].includes(entry.status)
+    ))) return entries
+    throw new Error('Stored policy approval queue has an invalid shape.')
+  } catch (error) {
+    console.error('Unable to load the saved demo policy approval queue.', error)
+    return []
+  }
 }
 
 function loadDemoClients() {
@@ -542,11 +709,17 @@ function App() {
   const [period, setPeriod] = useState('This week')
   const [policies, setPolicies] = useState(initialPolicies)
   const [clients, setClients] = useState(loadDemoClients)
+  const [approvalEntries, setApprovalEntries] = useState(loadDemoApprovals)
   const [policyClientId, setPolicyClientId] = useState('')
   const [newClient, setNewClient] = useState('')
   const [newType, setNewType] = useState('Motor Insurance')
 
-  const visibleNavigation = navigation.filter((item) => item.audience === 'all' || user?.id === 'admin' || (item.audience === 'cars' && user?.id === 'cars'))
+  const visibleNavigation = navigation.filter((item) => (
+    item.audience === 'all'
+    || (item.audience === 'admin' && user?.id === 'admin')
+    || (item.audience === 'manager' && user?.id === 'manager')
+    || (item.audience === 'cars' && user?.id === 'cars')
+  ))
   const dashboard = user ? dashboardData[user.id] : dashboardData.admin
   const visiblePolicies = useMemo(
     () => policies.filter((policy) => (!user?.line || policy.type === user.line) && `${policy.id} ${policy.client} ${policy.type}`.toLowerCase().includes(query.trim().toLowerCase())),
@@ -576,6 +749,68 @@ function App() {
   function showMessage(message) {
     setToast(message)
     window.setTimeout(() => setToast(''), 2800)
+  }
+
+  function persistApprovalEntries(nextEntries) {
+    try {
+      localStorage.setItem('nilein-demo-approvals', JSON.stringify(nextEntries))
+      setApprovalEntries(nextEntries)
+      return true
+    } catch (error) {
+      console.error('Unable to save the demo policy approval queue.', error)
+      showMessage('Unable to save this policy in the browser. Please try again.')
+      return false
+    }
+  }
+
+  function submitPolicy(policy, amounts) {
+    if (!user || !policy.policyNo) return
+    const entry = {
+      ...policy,
+      ...amounts,
+      id: policy.policyNo,
+      submittedAt: new Date().toISOString(),
+      submittedBy: user.name,
+      status: 'pending_admin',
+    }
+    if (approvalEntries.some((item) => item.id === entry.id)) {
+      showMessage('This policy has already been submitted for approval.')
+      return
+    }
+    if (persistApprovalEntries([entry, ...approvalEntries])) showMessage('Policy saved and submitted for admin approval.')
+  }
+
+  function approvePolicy(entryId, status) {
+    const entry = approvalEntries.find((item) => item.id === entryId)
+    if (!entry || !user) return
+    const timestamp = new Date().toISOString()
+    const updatedEntry = {
+      ...entry,
+      status,
+      ...(status === 'pending_manager'
+        ? { adminApprovedAt: timestamp, adminApprovedBy: user.name }
+        : { managerApprovedAt: timestamp, managerApprovedBy: user.name }),
+    }
+    const nextEntries = approvalEntries.map((item) => item.id === entryId ? updatedEntry : item)
+    if (!persistApprovalEntries(nextEntries)) return
+
+    if (status === 'pending_manager') {
+      showMessage('Policy approved and sent to Production Entry Approval.')
+    } else if (status === 'issued') {
+      setPolicies((current) => [
+        {
+          id: entry.policyNo,
+          client: entry.clientName,
+          type: entry.classOfInsurance,
+          date: entry.issueDate,
+          amount: Number(entry.totalPayable || 0).toLocaleString('en-US'),
+          status: 'Active',
+          color: 'green',
+        },
+        ...current.filter((policy) => policy.id !== entry.policyNo),
+      ])
+      showMessage('Policy approved and issued. Documents are ready to print.')
+    }
   }
 
   function persistClients(nextClients) {
@@ -668,7 +903,8 @@ function App() {
 
         <div className="page-content">
           {user.id === 'cars' && activePage === 'Client Registry' ? <ClientRegistry clients={clients} onCreate={createClient} onUpdate={updateClient} onStartPolicy={(clientId) => { setPolicyClientId(clientId); setActivePage('Make New') }} />
-            : user.id === 'cars' && activePage === 'Make New' ? <MakeNewPolicy clients={clients} initialClientId={policyClientId} onOpenRegistry={() => { setActivePage('Client Registry'); setPolicyClientId('') }} />
+            : user.id === 'cars' && activePage === 'Make New' ? <MakeNewPolicy clients={clients} initialClientId={policyClientId} onOpenRegistry={() => { setActivePage('Client Registry'); setPolicyClientId('') }} onSubmit={submitPolicy} />
+              : (user.id === 'admin' && activePage === 'Entry Approval') || (user.id === 'manager' && activePage === 'Production Entry Approval') ? <ApprovalPage role={user.id} entries={approvalEntries} onApprove={approvePolicy} />
               : <>
           <section className="welcome-row">
             <div><p className="eyebrow"><span className="eyebrow-line" /> {new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())}</p><h1>Good morning, {user.name.split(' ')[0]} <span>👋</span></h1><p className="welcome-subtitle">{user.line ? `Welcome to your ${user.department} workspace.` : 'Here is today’s overview of El Nilein Insurance.'}</p></div>
